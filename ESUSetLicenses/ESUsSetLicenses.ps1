@@ -1,5 +1,5 @@
 
-#requires -module Az.ResourceGraph -module Az.Accounts
+#requires -Version 7.3.8 -module Az.ResourceGraph -module Az.Accounts
 
 <#
 .DESCRIPTION
@@ -66,15 +66,15 @@ if ($ReadOnly -or ($ProvisionLicenses -and (-not $SourceLicensesFile))) {
 resources
 | where type =~ "microsoft.hybridcompute/machines"
 | where properties.osSku contains "Windows Server 2012"
-| extend  model = tostring(properties.detectedProperties.model)
-| project location, name, target = replace (" Standard","", replace(" Datacenter","",tostring(properties.osSku))), Edition =  tostring(split(properties.osSku, ' ')[-1]), Processors = toint(properties.detectedProperties.logicalCoreCount),Type = iff(model contains "virtual" or  model contains "VMWare","Virtual","Physical"),model, id
+| extend  model = tostring(properties.detectedProperties.model), status = tostring(properties.status)
+| project location, name, target = replace (" Standard","", replace(" Datacenter","",tostring(properties.osSku))), Edition =  tostring(split(properties.osSku, ' ')[-1]), Processors = toint(properties.detectedProperties.logicalCoreCount),Type = iff(model contains "virtual" or  model contains "VMWare","Virtual","Physical"),status,model, id
 "@
 
 
 
   $ESUArcServers = Search-AzGraph -Query $ESUquery -First 1000
-  $ESUArcServers | Select-Object location, Name, target, Edition, Processors, Type, id |  Sort-Object -Property Processors -Descending | ft
-  $ESUArcServers | Select-Object location, Name, target, Edition, Processors, Type, id |  Sort-Object -Property Processors -Descending | Export-Csv -Path .\ESUArcServers.csv -Force -NoTypeInformation
+  $ESUArcServers | Select-Object location, Name, target, Edition, Processors, Type, status, model, id |  Sort-Object -Property Processors -Descending | ft
+  $ESUArcServers | Select-Object location, Name, target, Edition, Processors, Type, status, model, id |  Sort-Object -Property Processors -Descending | Export-Csv -Path .\ESUArcServers.csv -Force -NoTypeInformation
 
 
   Write-Host "Existing Azure Arc enabled servers with correspondent Edition & core information has been generated in file 'ESUArcServers.csv'`n`n`n" -ForegroundColor Yellow
@@ -115,6 +115,7 @@ resources
       Type       = $_.Type # Physical or Virtual (vCore or pCore)
       Processors = $Processors # Number of processors
       server     = $_.name
+      status     = $_.status
       id         = $_.id
     }
     $ESUlicenses += $obj
@@ -124,7 +125,7 @@ resources
   $ESUlicenses | Export-Csv -Path .\ESULicensesSourcefile.csv -Force -NoTypeInformation
 
 
-  Write-Host "`n'ESULicensesSourcefile.csv' was created. The file contains all the ESU license you need for your environment . Modify it as need`n`n`n" -ForegroundColor Yellow
+  Write-Host "`n'ESULicensesSourcefile.csv' was created. The file contains all the ESU license you need for your environment . Modify it as needed`n`n`n" -ForegroundColor Yellow
 
 
   #endregion
@@ -261,8 +262,8 @@ if ($AssignLicenses) {
 break
 #Delete a license
 
-#$Path = "/$subscripionid/resourceGroups/arc-demo/Providers/Microsoft.HybridCompute/licenses/ESUlicense-SQL2014"
-#Invoke-AzRestMethod -Path "$($Path)?api-version=$apiversion" -Method DELETE -Verbose
+$Path = "/$subscripionid/resourceGroups/arc-demo/Providers/Microsoft.HybridCompute/licenses/ESUlicense-SQL2014"
+Invoke-AzRestMethod -Path "$($Path)?api-version=$apiversion" -Method DELETE -Verbose
 
 #DELETE  
 #https://management.azure.com/subscriptions/SUBSCRIPTION_ID/resourceGroups/RESOURCE_GROUP_NAME/Providers/Microsoft.HybridCompute/licenses/LICENSE_NAME?api-version=2023-06-20-preview

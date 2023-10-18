@@ -1,0 +1,3 @@
+"location","state","target","Edition","Type","Processors","server","status","id"
+"westeurope","Activated","Windows Server 2012 R2","Datacenter","Physical","32","HOST1","Connected","/subscriptions/71ac1fd6-9ebc-4a20-9667-b873f7cee091/resourceGroups/Arc-Demo/providers/Microsoft.HybridCompute/machines/ARC2012R2SQL"
+"westeurope","Activated","Windows Server 2012 R2","Datacenter","Physical","32","HOST1","Connected","/subscriptions/71ac1fd6-9ebc-4a20-9667-b873f7cee091/resourceGroups/Arc-Demo/providers/Microsoft.HybridCompute/machines/SQL2014"
