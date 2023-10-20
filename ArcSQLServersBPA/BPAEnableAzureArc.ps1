@@ -17,7 +17,7 @@ $Starttime = "22:00"
 
 
 $servers = @("server1","server2","server3")
-$servers = Get-Content -Path ".\servers.txt"
+#$servers = Get-Content -Path ".\servers.txt"
 
 #endregion
 

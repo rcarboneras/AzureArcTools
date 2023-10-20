@@ -6,7 +6,7 @@
    The Script select automatically all the Azure Arc machines in the tenant that have a extension with a version lower than 
    the Desired one.
 
-   ONLY machines with Tag  {"EnableExtensionsUpdate": "True"} with be updated by default. Skip this filter using SKipTags parameter
+   ONLY extensions in machines with Tag  {"EnableExtensionsUpdate": "True"} will be updated by default. Skip this filter using SKipTags parameter
 .PARAMETER type
     Specifies Extension Type
 .PARAMETER PublisherName
@@ -23,7 +23,7 @@
    This updates machines with tag {"EnableExtensionsUpdate": "True"} to version 1.5.66 of WindowsPatchExtension
    .\Update-AzureArcExtensions.ps1 -PublisherName Microsoft.CPlat.Core -Type WindowsPatchExtension -DesiredVersion 1.5.66 -Location eastus 
 .EXAMPLE
-   This updates machines to version 1.5.66 of WindowsPatchExtension, regarding its tags
+   This updates machines to version 1.5.66 of WindowsPatchExtension, regardless its tags
    .\Update-AzureArcExtensions.ps1 -PublisherName Microsoft.CPlat.Core -Type WindowsPatchExtension -DesiredVersion 1.5.66 -Location eastus -SkipTags
 .EXAMPLE
    This previews machines with tag {"EnableExtensionsUpdate": "True"} that have version lower than 1.5.66 of WindowsPatchExtension
@@ -40,7 +40,7 @@ Param (
     [ValidateSet("AdminCenter", "AzureMonitorLinuxAgent", "AzureMonitorWindowsAgent", "AzureSecurityLinuxAgent", "AzureSecurityWindowsAgent", "ChangeTracking-Linux", "ChangeTracking-Windows", "CustomScript", "CustomScriptExtension", "DependencyAgentLinux", "DependencyAgentWindows", "LinuxAgent.SqlServer", "LinuxOsUpdateExtension", "LinuxPatchExtension", "MDE.Linux", "MDE.Windows", "WindowsAgent.SqlServer", "WindowsOsUpdateExtension", "WindowsPatchExtension")]
     [string]$Type,
     [Parameter(Mandatory)]
-    [ValidateSet("Microsoft.AdminCenter", "Microsoft.Azure.ActiveDirectory", "Microsoft.Azure.Automation.HybridWorker", "Microsoft.Azure.AzureDefenderForServers", "Microsoft.Azure.ChangeTrackingAndInventory", "Microsoft.Azure.Extensions", "Microsoft.Azure.Monitor", "Microsoft.Azure.Monitoring.DependencyAgent", "Microsoft.AzureData", "Microsoft.Compute", "Microsoft.CPlat.Core", "Microsoft.EnterpriseCloud.Monitoring", "Microsoft.SoftwareUpdateManagement")]
+    [ValidateSet("Microsoft.AdminCenter", "Microsoft.Azure.ActiveDirectory", "Microsoft.Azure.Automation.HybridWorker", "Microsoft.Azure.AzureDefenderForServers", "Microsoft.Azure.ChangeTrackingAndInventory", "Microsoft.Azure.Extensions", "Microsoft.Azure.Monitor", "Microsoft.Azure.Monitoring.DependencyAgent", "Microsoft.AzureData","Microsoft.Azure.Security.Monitoring","Microsoft.Compute", "Microsoft.CPlat.Core", "Microsoft.EnterpriseCloud.Monitoring", "Microsoft.SoftwareUpdateManagement")]
     [string]$PublisherName,
     [Parameter(Mandatory)]
     $DesiredVersion,
@@ -95,12 +95,11 @@ is in a Connected state#>
 
 Write-Host "Querying existing resources ... " -ForegroundColor Green
 
-
+# | where properties.provisioningState == "Succeeded"
 $kqlQuery = @"
 resources
 | where type == 'microsoft.hybridcompute/machines/extensions'
 | where properties.type == '$type' and location == '$Location'
-| where properties.provisioningState == "Succeeded"
 | extend typeHandlerVersion = tostring(properties.typeHandlerVersion)
 | where parse_version(typeHandlerVersion) < parse_version('$DesiredVersion')
 | extend machineid = tolower(tostring(split(id,'/extensions/',0)[0]))
