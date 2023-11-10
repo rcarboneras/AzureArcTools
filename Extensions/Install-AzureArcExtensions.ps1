@@ -16,6 +16,14 @@
     Specifies Extension location
 .PARAMETER WhatIf
     No installation is performed. A preview list of the posible affected machines is shown
+.PARAMETER SettingsFile
+    Specifies a JSON file with the settings for the extension.
+    {
+    "proxy": {
+        "mode": "application",
+        "address": "http://proxy.contoso.com"
+    }
+}
 .PARAMETER SkipTags
     Removes the Tag filter. Every machine that don't have the extension installed will be affected, regardless of its Azure tags
 .EXAMPLE
@@ -32,7 +40,7 @@ Param (
     [ValidateSet("AdminCenter", "AzureMonitorLinuxAgent", "AzureMonitorWindowsAgent", "AzureSecurityLinuxAgent", "AzureSecurityWindowsAgent", "ChangeTracking-Linux", "ChangeTracking-Windows", "CustomScript", "CustomScriptExtension", "DependencyAgentLinux", "DependencyAgentWindows", "LinuxAgent.SqlServer", "LinuxOsUpdateExtension", "LinuxPatchExtension", "MDE.Linux", "MDE.Windows", "WindowsAgent.SqlServer", "WindowsOsUpdateExtension", "WindowsPatchExtension")]
     [string]$Type,
     [Parameter(Mandatory)]
-    [ValidateSet("Microsoft.AdminCenter", "Microsoft.Azure.ActiveDirectory", "Microsoft.Azure.Automation.HybridWorker", "Microsoft.Azure.AzureDefenderForServers", "Microsoft.Azure.ChangeTrackingAndInventory", "Microsoft.Azure.Extensions", "Microsoft.Azure.Monitor", "Microsoft.Azure.Monitoring.DependencyAgent", "Microsoft.AzureData","Microsoft.Azure.Security.Monitoring","Microsoft.Compute", "Microsoft.CPlat.Core", "Microsoft.EnterpriseCloud.Monitoring", "Microsoft.SoftwareUpdateManagement")]
+    [ValidateSet("Microsoft.AdminCenter", "Microsoft.Azure.ActiveDirectory", "Microsoft.Azure.Automation.HybridWorker", "Microsoft.Azure.AzureDefenderForServers", "Microsoft.Azure.ChangeTrackingAndInventory", "Microsoft.Azure.Extensions", "Microsoft.Azure.Monitor", "Microsoft.Azure.Monitoring.DependencyAgent", "Microsoft.AzureData", "Microsoft.Azure.Security.Monitoring", "Microsoft.Compute", "Microsoft.CPlat.Core", "Microsoft.EnterpriseCloud.Monitoring", "Microsoft.SoftwareUpdateManagement")]
     [string]$PublisherName,
     [Parameter(Mandatory)]
     [ValidateSet("windows", "linux")]
@@ -41,7 +49,8 @@ Param (
     [Parameter(Mandatory)]
     $Location = "eastus",
     [switch]$Whatif,
-    [switch]$SkipTags 
+    [switch]$SkipTags,
+    [string]$SettingsFile
 )
 
 
@@ -160,7 +169,7 @@ $kqlQueryResults = Search-AzGraph -Query $kqlQueryServersWithoutExtension -First
 
 $ExtensiontoInstall = $kqlQueryResults | Select-Object @{N = "subscription"; E = { ($_.id -split "/")[2] } }, resourceGroup, @{N = "Machine"; E = { $_.Name } }, @{N = "type"; E = { $type } }, @{N = "version"; E = { $DesiredVersion } }, Location
 
-Write-Host "`nThe following machines don't have extension $type in location $location.." -ForegroundColor Yellow
+Write-Host "`nThe following $($ExtensiontoInstall.Count) machines don't have extension $type in location $location.." -ForegroundColor Yellow
 $ExtensiontoInstall | Format-Table
 
 
@@ -180,6 +189,7 @@ else {
     
     # Perform the Installation
 
+  
     Write-Host "You are about to install $type extension for $OStype (version $DesiredVersion)  on $($ExtensiontoInstall.count) Machine(s) in $location location.." -ForegroundColor Yellow
     Read-Host -Prompt "Press ENTER to continue"
     
@@ -190,15 +200,41 @@ else {
         #Get-AzSubscription -SubscriptionId $group.Name -WarningAction SilentlyContinue
         $Subscription = Select-AzSubscription -SubscriptionId $group.Name -WarningAction SilentlyContinue
         Write-Host "Install extensions from Subscription: $($Subscription.Subscription.Name) $($Subscription.Subscription.id)" -ForegroundColor Green
+
+        # Check if settings file was passed
+        if ($PSBoundParameters.ContainsKey("SettingsFile")) {
+            Write-Host "Settings file was passed. Checking if it exists..." -ForegroundColor Green
+            if (Test-Path $SettingsFile) {
+                Write-Host "Settings file exists. Reading settings..." -ForegroundColor Green
+                $Settingscontent = Get-Content $SettingsFile | ConvertFrom-Json
+                $Settings = @{}
+                foreach ($property in $Settingscontent.PSObject.Properties) {
+                    $Settings[$property.Name] = $property.Value
+                }
+                Write-Host "Settings file was read successfully" -ForegroundColor Green
+            }
+            else {
+                Write-Host "Settings file does not exist. Exiting..." -ForegroundColor Yellow
+                break
+            }
+        }
+
         foreach ($extension in $group.Group ) {
-            
-            New-AzConnectedMachineExtension -MachineName $extension.machine `
-                -Name $extension.type `
-                -ResourceGroupName $extension.resourceGroup `
-                -Publisher $PublisherName `
-                -ExtensionType $Type `
-                -Location $Location `
-                -NoWait -Verbose
+            $Parameters = @{
+                MachineName       = $extension.machine
+                Name              = $extension.type
+                ResourceGroupName = $extension.resourceGroup
+                Publisher         = $PublisherName
+                ExtensionType     = $Type
+                Location          = $Location
+                NoWait            = $true
+                Verbose           = $true
+            }
+            if ($PSBoundParameters.ContainsKey("SettingsFile")) {
+                $Parameters["Setting"] = $Settings
+            }
+    
+            New-AzConnectedMachineExtension @Parameters
         }
     } 
 
@@ -215,4 +251,3 @@ else {
     Write-Host "CSV file '$csvPath' with ResourceIds of the affected machines was created. Check the installation in the Azure Portal" -ForegroundColor Green
 
 }
-break
