@@ -92,6 +92,7 @@ resources
     # Virtual: 8 Cores
 
     if ($_.Type -eq "Physical") {
+      $Edition = $_.Edition
       if ([int]$_.processors -lt 16) {
         $Processors = 16
       }
@@ -99,7 +100,8 @@ resources
         $Processors = $_.processors
       }
     }
-    else {
+    else { #Virtual machine
+      $Edition = "Standard"
       if ([Int]$_.processors -lt 8) {
         $Processors = 8
       }
@@ -111,7 +113,7 @@ resources
       location   = $_.location
       state      = "Activated" # State of the license
       target     = $_.target # 2012 or 2012 R2
-      Edition    = $_.Edition # Standard or Datacenter
+      Edition    = $Edition # Standard or Datacenter
       Type       = $_.Type # Physical or Virtual (vCore or pCore)
       Processors = $Processors # Number of processors
       server     = $_.name
