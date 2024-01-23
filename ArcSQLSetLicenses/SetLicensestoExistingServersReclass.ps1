@@ -1,5 +1,6 @@
 #Updated settings object
 $Settings = @{ SqlManagement = @{ IsEnabled = $true }; LicenseType = "Paid" }
+$location = "westeurope"
 
 #Command stays the same as before, only settings is changed above:
 #New-AzConnectedMachineExtension -Name "WindowsAgent.SqlServer" -ResourceGroupName { your resource group name } -MachineName { your machine name } -Location { azure region } -Publisher "Microsoft.AzureData" -Settings $Settings -ExtensionType "WindowsAgent.SqlServer"
@@ -51,7 +52,7 @@ foreach ($item in $extensionstoset) {
     $ResourceGroup = ($item.id -split "/")[-7]
     $Machinename = ($item.id -split "/")[-3]
     Set-AzConnectedMachineExtension -Name "WindowsAgent.SqlServer" -ResourceGroupName $ResourceGroup -MachineName $Machinename `
-    -Location westeurope -Publisher "Microsoft.AzureData" -Setting $Settings -ExtensionType "WindowsAgent.SqlServer" -NoWait
+    -Location $location -Publisher "Microsoft.AzureData" -Setting $Settings -ExtensionType "WindowsAgent.SqlServer" -NoWait
 }
 
 
