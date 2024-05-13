@@ -72,7 +72,7 @@ $results = foreach ($group in $ResultsGlobalGrouped) {
     foreach ($arcobject in $group.Group ) {
         $machinename = $arcobject.AzureArcServerName
         $ResourceGroupName = $arcobject.resourceGroup
-        $licensetype = Get-AzConnectedMachineExtension -MachineName $machinename -ResourceGroupName $ResourceGroupName -Name WindowsAgent.SqlServer -ErrorAction SilentlyContinue | Select-Object -ExpandProperty setting | ConvertFrom-Json | Select-Object -ExpandProperty LicenseType -ErrorAction SilentlyContinue
+        $licensetype = (Get-AzConnectedMachineExtension -MachineName $machinename -ResourceGroupName $ResourceGroupName -Name WindowsAgent.SqlServer -ErrorAction SilentlyContinue | Select-Object -expandproperty setting).LicenseType
         $properties = [ordered]@{
             createdAt          = $arcobject.createdAt          
             subscriptionId     = $arcobject.subscriptionId     
