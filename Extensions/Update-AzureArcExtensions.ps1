@@ -20,8 +20,8 @@
 .PARAMETER SkipTags
     Removes the Tag filter. Every machine that have the extension version lower than the desired one is affected
 .EXAMPLE
-   This updates machines with tag {"EnableExtensionsUpdate": "True"} to version 1.5.66 of WindowsPatchExtension
-   .\Update-AzureArcExtensions.ps1 -PublisherName Microsoft.CPlat.Core -Type WindowsPatchExtension -DesiredVersion 1.5.66 -Location eastus 
+   This updates machines with tag {"EnableExtensionsUpdate": "True"} to version 1.26.00 of AzureMonitorWindowsAgent
+   .\Update-AzureArcExtensions.ps1 -PublisherName Microsoft.Azure.Monitor -Type AzureMonitorWindowsAgent -DesiredVersion 1.26.0.0 -Location westeurope
 .EXAMPLE
    This updates machines to version 1.5.66 of WindowsPatchExtension, regardless its tags
    .\Update-AzureArcExtensions.ps1 -PublisherName Microsoft.CPlat.Core -Type WindowsPatchExtension -DesiredVersion 1.5.66 -Location eastus -SkipTags
