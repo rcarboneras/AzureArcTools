@@ -113,7 +113,32 @@ if (-not ($PSBoundParameters.ContainsKey("SkipTags"))) {
 $kqlQuery += "`n| project machineid = tolower(id)) on machineid"
 
 
-$kqlQueryResults = Search-AzGraph -Query $kqlQuery -First 1000
+# Executing kql query using Pagination
+
+$batchSize = 500
+$skipResult = 0
+
+[System.Collections.Generic.List[string]]$kqlQueryResults
+
+while ($true) {
+
+  if ($skipResult -gt 0) {
+    $graphResult = Search-AzGraph -Query $kqlQuery -First $batchSize -SkipToken $graphResult.SkipToken
+  }
+  else {
+    $graphResult = Search-AzGraph -Query $kqlQuery -First $batchSize
+  }
+
+  $kqlQueryResults += $graphResult.data
+
+  if ($graphResult.data.Count -lt $batchSize) {
+    break;
+  }
+  $skipResult += $skipResult + $batchSize
+}
+
+
+
 
 if ($kqlQueryResults.count -eq 0)
 { Write-Host "No Azure Arc Machine meet the criteria to update" -ForegroundColor Yellow; break }
