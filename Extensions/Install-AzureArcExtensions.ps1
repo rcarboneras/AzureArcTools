@@ -50,7 +50,8 @@ Param (
     $Location = "eastus",
     [switch]$Whatif,
     [switch]$SkipTags,
-    [string]$SettingsFile
+    [string]$SettingsFile,
+    [int]$batchSize = 250
 )
 
 
@@ -162,8 +163,25 @@ if (-not ($PSBoundParameters.ContainsKey("SkipTags"))) {
 }
 
 
-$kqlQueryResults = Search-AzGraph -Query $kqlQueryServersWithoutExtension -First 1000
+# Executing kql query using Pagination
+$skipResult = 0
 
+
+$kqlQueryResults  = @()
+while ($true) {
+
+    if ($skipResult -gt 0) {
+        $graphResult = Search-AzGraph -Query $kqlQueryServersWithoutExtension -First $batchSize -SkipToken $graphResult.SkipToken -Skip $skipResult
+    }
+    else {
+        $graphResult = Search-AzGraph -Query $kqlQueryServersWithoutExtension -First $batchSize
+    }
+    $kqlQueryResults += $graphResult.data
+    if ($graphResult.data.Count -lt $batchSize) {
+        break;
+    }
+    $skipResult += $batchSize
+}
 
 # Query finished, showing results
 

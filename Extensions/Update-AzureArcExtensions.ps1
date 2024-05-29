@@ -47,7 +47,8 @@ Param (
     [Parameter(Mandatory)]
     $Location = "eastus",
     [switch]$Whatif,
-    [switch]$SkipTags 
+    [switch]$SkipTags,
+    [int]$batchSize = 250
 )
 
 
@@ -115,7 +116,6 @@ $kqlQuery += "`n| project machineid = tolower(id)) on machineid"
 
 # Executing kql query using Pagination
 
-$batchSize = 500
 $skipResult = 0
 
 [System.Collections.Generic.List[string]]$kqlQueryResults
