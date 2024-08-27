@@ -7,13 +7,20 @@ $location = "westeurope"
 
 
 #Get Azure Arc Servers
-$arcservers = Get-AzConnectedMachine | Select-Object -Property Name,ResourceGroupName
+$arcservers = Get-AzConnectedMachine | Select-Object -Property Name, ResourceGroupName
 
 # Get SQL extensions
 
-Write-Host "Getting SQL extension información from $($arcservers.Count) servers using PowerShell Az module. This might take a few minutes"
-$sqlextensions = foreach ($arcserver in $arcservers) `
+Write-Host "Getting SQL  información from $($arcservers.Count) servers using PowerShell Az module. This might take a few minutes"
+$sqlextensions = foreach ($arcserver in $arcservers)
 { Get-AzConnectedMachineExtension -MachineName $arcserver.Name -ResourceGroupName $arcserver.ResourceGroupName -Name WindowsAgent.SqlServer -ErrorAction SilentlyContinue }
+
+$SQLProperties = foreach ($Id in $sqlextensions.id)
+{ Get-AzResource -ResourceId $Id | Select-Object -ExpandProperty Properties  | Select-Object -Property version, edition, containerResourceId, licenseType }
+
+$SQLProperties = foreach ($Id in $sqlextensions.id)
+{ Get-AzResource -ResourceId $Id | Select-Object -ExpandProperty Properties } | Select-Object -Property version, edition, containerResourceId, licenseType }
+# Get SQL Instances
 
 # Get SQL Instances
 
@@ -24,7 +31,7 @@ resources
 '@
 $SQLInstances = Search-AzGraph -Query $query -First 1000
 $SQLInstanceshash = @{}
-$SQLInstances | ForEach-Object {$id = ($_.containerResourceId).tolower(); $SQLInstanceshash["$id"] = $_}
+$SQLInstances | ForEach-Object { $id = ($_.containerResourceId).tolower(); $SQLInstanceshash["$id"] = $_ }
 
 
 $sqlextensionsconf = $sqlextensions | ForEach-Object {
@@ -32,27 +39,29 @@ $sqlextensionsconf = $sqlextensions | ForEach-Object {
     New-Object -TypeName psobject -Property @{
         Server      = ($_.id -split "/")[-3]
         LicenseType = $_.Setting.AdditionalProperties.LicenseType
-        Version = $_.TypeHandlerVersion
-        edition = $SQLInstanceshash["$id"].edition
+        Version     = $_.TypeHandlerVersion
+        edition     = $SQLInstanceshash["$id"].edition
+        location   = $_.Location
     }    
 }
 
 # Show results
 Write-Host "Servers with SQL extension installed and their license type:"
-$sqlextensionsconf | Where-Object {($_.LicenseType -like "Paid") -and ($_.edition -in @("Standard","Enterprise"))} | Sort-Object -Property Edition
-Write-Host "Servers with SQL extension installed and without license type set:"
-$sqlextensionsconf | Where-Object {($_.LicenseType -notlike "Paid") -and ($_.edition -in @("Standard","Enterprise"))} | Sort-Object -Property Edition
+$sqlextensionsconf | Where-Object { ($_.LicenseType -like "Paid") -and ($_.edition -in @("Standard", "Enterprise")) } | Sort-Object -Property Edition
+Write-Host "Servers with SQL extension installed and without license type set to Paid:"
+$sqlextensionsconf | Where-Object { ($_.LicenseType -notlike "Paid") -and ($_.edition -in @("Standard", "Enterprise")) } | Sort-Object -Property Edition
 
 # Set extensions that don't have license type set to paid
-$extensionstoset = $sqlextensions | Where-Object { $_.Setting.AdditionalProperties.LicenseType -ne "Paid" }
+$extensionstoset = $sqlextensions | Where-Object { $_.Setting["LicenseType"] -ne "Paid" }
 
 break # Remove this line to run the script to make changes
 
 foreach ($item in $extensionstoset) {
     $ResourceGroup = ($item.id -split "/")[-7]
     $Machinename = ($item.id -split "/")[-3]
+    $location = $item.Location
     Set-AzConnectedMachineExtension -Name "WindowsAgent.SqlServer" -ResourceGroupName $ResourceGroup -MachineName $Machinename `
-    -Location $location -Publisher "Microsoft.AzureData" -Setting $Settings -ExtensionType "WindowsAgent.SqlServer" -NoWait
+        -Location $location -Publisher "Microsoft.AzureData" -Setting $Settings -ExtensionType "WindowsAgent.SqlServer" -NoWait
 }
 
 
