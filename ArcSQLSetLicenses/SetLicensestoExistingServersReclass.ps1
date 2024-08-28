@@ -1,7 +1,9 @@
-#Updated settings object
-$Settings = @{ SqlManagement = @{ IsEnabled = $true }; LicenseType = "Paid" }
-$location = "westeurope"
+#This script will set the license type to the specified one, for all SQL servers Enterprise and Standard Edition
+# that have the SQL extension installed
 
+#Updated settings object
+$LicenseType = "Paid"
+$Settings = @{ SqlManagement = @{ IsEnabled = $true }; LicenseType = $LicenseType }
 #Command stays the same as before, only settings is changed above:
 #New-AzConnectedMachineExtension -Name "WindowsAgent.SqlServer" -ResourceGroupName { your resource group name } -MachineName { your machine name } -Location { azure region } -Publisher "Microsoft.AzureData" -Settings $Settings -ExtensionType "WindowsAgent.SqlServer"
 
@@ -15,19 +17,13 @@ Write-Host "Getting SQL  información from $($arcservers.Count) servers using Po
 $sqlextensions = foreach ($arcserver in $arcservers)
 { Get-AzConnectedMachineExtension -MachineName $arcserver.Name -ResourceGroupName $arcserver.ResourceGroupName -Name WindowsAgent.SqlServer -ErrorAction SilentlyContinue }
 
-$SQLProperties = foreach ($Id in $sqlextensions.id)
-{ Get-AzResource -ResourceId $Id | Select-Object -ExpandProperty Properties  | Select-Object -Property version, edition, containerResourceId, licenseType }
-
-$SQLProperties = foreach ($Id in $sqlextensions.id)
-{ Get-AzResource -ResourceId $Id | Select-Object -ExpandProperty Properties } | Select-Object -Property version, edition, containerResourceId, licenseType }
-# Get SQL Instances
-
 # Get SQL Instances
 
 $query = @'
 resources
 | where ['type'] == "microsoft.azurearcdata/sqlserverinstances"
 | project containerResourceId = properties.containerResourceId, instanceName = properties.instanceName, edition = properties.edition, version = properties.version, licenseType = properties.licenseType
+| where edition == "Enterprise" or edition == "Standard"
 '@
 $SQLInstances = Search-AzGraph -Query $query -First 1000
 $SQLInstanceshash = @{}
@@ -46,13 +42,13 @@ $sqlextensionsconf = $sqlextensions | ForEach-Object {
 }
 
 # Show results
-Write-Host "Servers with SQL extension installed and their license type:"
-$sqlextensionsconf | Where-Object { ($_.LicenseType -like "Paid") -and ($_.edition -in @("Standard", "Enterprise")) } | Sort-Object -Property Edition
-Write-Host "Servers with SQL extension installed and without license type set to Paid:"
-$sqlextensionsconf | Where-Object { ($_.LicenseType -notlike "Paid") -and ($_.edition -in @("Standard", "Enterprise")) } | Sort-Object -Property Edition
+Write-Host "Servers with SQL extension installed and with license type $($LicenseType):"
+$sqlextensionsconf | Where-Object { ($_.LicenseType -like $LicenseType) -and ($_.edition -in @("Standard", "Enterprise")) } | Sort-Object -Property Edition
+Write-Host "Servers with SQL extension installed and with license type not set to $($LicenseType):"
+$sqlextensionsconf | Where-Object { ($_.LicenseType -notlike $LicenseType) -and ($_.edition -in @("Standard", "Enterprise")) } | Sort-Object -Property Edition
 
 # Set extensions that don't have license type set to paid
-$extensionstoset = $sqlextensions | Where-Object { $_.Setting["LicenseType"] -ne "Paid" }
+$extensionstoset = $sqlextensions | Where-Object { $_.Setting["LicenseType"] -ne $LicenseType}
 
 break # Remove this line to run the script to make changes
 
