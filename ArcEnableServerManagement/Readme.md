@@ -39,7 +39,14 @@ This PowerShell script enables Software Assurance benefits for Azure Arc servers
 - `SubscriptionId`: The ID of the Azure subscription.
 - `ResourceGroupNames`: An array of resource group names to query.
 
+
 ## Example
 
 ```powershell
 .\EnableServerManagement.ps1 -SubscriptionId "12345678-1234-1234-1234-123456789012" -ResourceGroupNames "ResourceGroup1", "ResourceGroup2"
+```
+## Script Output
+
+![ActivationScript](image01.jpg)
+
+![Results](image02.jpg)
