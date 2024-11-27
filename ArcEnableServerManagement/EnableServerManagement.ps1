@@ -145,10 +145,10 @@ resources
 # This section enables Server Managemen) (Software Assurance benefits) for the selected servers
 
 
-Write-Host "$($results | Format-Table Name,OperatingSystem,BenefitsStatus,status,logicalCoreCount,resourcegroup,subscriptionid | Out-String)" -ForegroundColor Green
+Write-Host "$($results | Format-Table Name,OperatingSystem,BenefitsStatus,status,logicalCoreCount,resourcegroup, location, subscriptionid | Out-String)" -ForegroundColor Green
 
 # Export the list of servers to a CSV file
-$results | Select-Object Name, BenefitsStatus, status, logicalCoreCount, resourcegroup, subscriptionid | Export-Csv -notypeinformation -Path ".\AzureArcServerstoActivateSM-$($timestamp).csv"
+$results | Select-Object Name, BenefitsStatus, status, logicalCoreCount, resourcegroup, location, subscriptionid | Export-Csv -notypeinformation -Path ".\AzureArcServerstoActivateSM-$($timestamp).csv"
 
 if ($results.Count -eq 0) {
     Write-Host "No Azure Arc servers were found to activate for Software Assurance benefits." -ForegroundColor Yellow
@@ -170,7 +170,7 @@ $csvFilePath = ".\AzureArcServerstoActivateSM-Results-$($timestamp).csv"
 # Check if the CSV file exists
 if (-Not (Test-Path -Path $csvFilePath)) {
     # If the file does not exist, create it and add the headers
-    "name,OperatingSystem,Status,BenefitsStatus,ResourceGroup,CoreCount,LogicalCoreCount,SubscriptionId,Location,details" | Out-File -Path $csvFilePath
+    "name,OperatingSystem,Status,BenefitsStatus,ResourceGroup,LogicalCoreCount,SubscriptionId,Location,details" | Out-File -Path $csvFilePath
 }
 
 Write-Host "Enabling Software Assurance benefits for the selected servers..." -ForegroundColor Green
@@ -192,7 +192,7 @@ foreach ($group in $ResultsGroupedbysub) {
 
     $Subscriptionid = $group.Name # SelectS the subscription id for each group
 
-    $subscription = Select-AzSubscription -SubscriptionId $Subscriptionid[0] -WarningAction SilentlyContinue -Tenant $tenantId
+    $subscription = Select-AzSubscription -SubscriptionId $Subscriptionid -WarningAction SilentlyContinue -Tenant $tenantId
     Write-Host " Working in subscription $($group.Name) $($Subscription.Subscriptionid)" -ForegroundColor Yellow
     foreach ($arcobject in $group.Group ) {
         $machinename = $arcobject.name
@@ -222,11 +222,10 @@ foreach ($group in $ResultsGroupedbysub) {
                 Status           = $status
                 BenefitsStatus   = "Activated"
                 ResourceGroup    = $ResourceGroup
-                CoreCount        = $coreCount
                 LogicalCoreCount = $logicalCoreCount
-                SubscriptionId   = $subscriptionId[0]
+                SubscriptionId   = $subscriptionId
                 Location         = $location
-                details          = ""
+                details          = "OK"
             }
             $serverObject | Export-Csv -Path $csvFilePath -NoTypeInformation -Append
             Write-Host "Software Assurance benefits enabled for the server '$($machinename)' in the subscription '$($Subscriptionid)'" -ForegroundColor Green
@@ -239,9 +238,8 @@ foreach ($group in $ResultsGroupedbysub) {
                 Status           = $status
                 BenefitsStatus   = "Not activated"
                 ResourceGroup    = $ResourceGroup
-                CoreCount        = $coreCount
                 LogicalCoreCount = $logicalCoreCount
-                SubscriptionId   = $subscriptionId[0]
+                SubscriptionId   = $subscriptionId
                 Location         = $location
                 details          = ($_.Errordetails.message | ConvertFrom-Json).error.message
             }
