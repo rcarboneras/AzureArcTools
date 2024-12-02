@@ -51,7 +51,11 @@ Param (
   [switch]$AssignLicenses,
   [Parameter(Mandatory = $false,
     ParameterSetName = 'AssignLicenses')]
-  [string]$SourceLicenseAssigmentInfoFile
+  [string]$SourceLicenseAssigmentInfoFile,
+  [Parameter(Mandatory = $false,
+    ParameterSetName = 'ProvisionLicenses')]
+  [string]$Year1InvoiceId
+
 )
 
 $apiversion = "2023-06-20-preview"
@@ -100,7 +104,8 @@ resources
         $Processors = $_.processors
       }
     }
-    else { #Virtual machine
+    else {
+      #Virtual machine
       $Edition = "Standard"
       if ([Int]$_.processors -lt 8) {
         $Processors = 8
@@ -111,7 +116,7 @@ resources
     }
     $obj = [PSCustomObject]@{
       location   = $_.location
-      state      = "Activated" # State of the license
+      state      = "Activated" # State of the license: Activated or Deactivated
       target     = $_.target # 2012 or 2012 R2
       Edition    = $Edition # Standard or Datacenter
       Type       = $_.Type # Physical or Virtual (vCore or pCore)
@@ -173,13 +178,36 @@ if ($ProvisionLicenses) {
     $state = $license.state
     $target = $license.target
     $Edition = $license.Edition
-    $LicenseName = "ESULicense-$($license.server)"
+    $LicenseName = "ESULicense--$($license.server)"
     $Processors = $license.Processors
     $Type = $Type # pCore, vCore
     $SubscriptionId = $license.SubscriptionId
     $ResourceGroup = ($license.id -split "/")[4]
 
-    $payload = @"
+    if ($PSBoundParameters.ContainsKey('Year1InvoiceId')) {
+      $payload = @"
+      {
+          "location": "$location", 
+          "properties": {
+              "licenseDetails": {
+                  "state": "$state",
+                  "target": "$target",
+                  "Edition": "$Edition", 
+                  "Type": "$Type",
+                  "Processors": $Processors,
+                  "volumeLicenseDetails": [
+                    {
+                      "programYear": "Year 1",
+                      "invoiceId": "$Year1InvoiceId"
+                    }
+                  ]
+              } 
+          } 
+      }
+"@
+    }
+    else {
+      $payload = @"
 {
     "location": "$location", 
     "properties": {
@@ -193,9 +221,10 @@ if ($ProvisionLicenses) {
     } 
 }
 "@
+    }
     $payload | ConvertFrom-Json 
 
-
+Wait-Debugger
     #Provision license 
     try {
      
