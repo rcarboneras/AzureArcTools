@@ -178,7 +178,7 @@ if ($ProvisionLicenses) {
     $state = $license.state
     $target = $license.target
     $Edition = $license.Edition
-    $LicenseName = "ESULicense--$($license.server)"
+    $LicenseName = "ESULicense-$($license.server)"
     $Processors = $license.Processors
     $Type = $Type # pCore, vCore
     $SubscriptionId = $license.SubscriptionId
