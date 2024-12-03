@@ -87,11 +87,11 @@ resources
 | where BenefitsStatus == "$benefitsStatus"
 "@
 
-if ($PSBoundParameters.ContainsKey('SubscriptionId')) {
+if ($PSBoundParameters.ContainsKey('SubscriptionIds')) {
     $KQLquery = $KQLquery + "`n| where subscriptionId in ('" + ($SubscriptionIds -join "','") + "')"
 }
 
-if ($PSBoundParameters.ContainsKey('ResourceGroupName')) {
+if ($PSBoundParameters.ContainsKey('ResourceGroupNames')) {
     $KQLquery = $KQLquery + "`n| where resourceGroup in ('" + ($ResourceGroupNames -join "','") + "')"
 }
 
