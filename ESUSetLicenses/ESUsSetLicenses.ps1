@@ -31,6 +31,14 @@
 
   .\ESUsSetLicenses.ps1 -AssignLicenses
   .\ESUsSetLicenses.ps1 -AssignLicenses -SourceLicenseAssigmentInfoFile ModifiedESUAssigmentInfo.csv
+
+.EXAMPLE
+  Create the ESU licenses for the Azure Arc servers running Windows Server 2012 or 2012 R2, using a modified ModifiedESULicensesSourcefile.csv file
+  A 'ESUAssigmentInfo.csv' file will be created with the information of the licenses created and the Azure Arc servers linked to them.
+
+  This sintaxis is for customers that already purchashed the ESU licenses for Year 1 and have the Year1InvoiceId (10 digits) available.
+
+   .\ESUsSetLicenses.ps1 -ProvisionLicenses -SourceLicensesFile 'ModifiedESULicensesSourcefile.csv' -Year1InvoiceId 1234567890
 #>
 
 
@@ -298,6 +306,3 @@ Invoke-AzRestMethod -Path "$($Path)?api-version=$apiversion" -Method DELETE -Ver
 
 #DELETE  
 #https://management.azure.com/subscriptions/SUBSCRIPTION_ID/resourceGroups/RESOURCE_GROUP_NAME/Providers/Microsoft.HybridCompute/licenses/LICENSE_NAME?api-version=2023-06-20-preview
-
-
-
