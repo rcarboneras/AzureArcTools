@@ -119,7 +119,6 @@ Read-Host "Press Enter to continue or Ctrl+C to cancel"
           $ESUArcServer | Select-Object name, @{N="osSku";E={$_.properties.osSku}},resourceGroup, location, subscriptionId | Export-Csv -Path ".\ESUArcServerstoUnlinkerrors-$timestamp.csv" -Force -NoTypeInformation -Append
           $Unlinkresponse
         }
-        Wait-Debugger
       }
     }
     'Delete' {
