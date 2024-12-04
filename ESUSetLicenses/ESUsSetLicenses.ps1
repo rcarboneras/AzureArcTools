@@ -232,7 +232,6 @@ if ($ProvisionLicenses) {
     }
     $payload | ConvertFrom-Json 
 
-Wait-Debugger
     #Provision license 
     try {
      
