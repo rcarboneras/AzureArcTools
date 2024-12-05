@@ -1,0 +1,23 @@
+resources
+| where type =~ "microsoft.hybridcompute/machines"
+| extend status = properties.status
+| where status != "Expired"
+| extend operatingSystem = properties.osSku
+| where properties.osType =~ 'windows' and operatingSystem !contains "2008"
+| extend licenseProfile = properties.licenseProfile
+| extend licenseStatus = tostring(licenseProfile.licenseStatus)
+| extend licenseChannel = tostring(licenseProfile.licenseChannel)
+| extend productSubscriptionStatus = tostring(licenseProfile.productProfile.subscriptionStatus)
+| extend softwareAssurance = licenseProfile.softwareAssurance
+| extend softwareAssuranceCustomer = licenseProfile.softwareAssurance.softwareAssuranceCustomer
+| extend logicalCoreCount = toint(properties.detectedProperties.logicalCoreCount)
+| extend benefitsStatus = case(
+    softwareAssuranceCustomer == true, "Activated",
+    (licenseStatus =~ "Licensed" and licenseChannel =~ "PGS:TB") or productSubscriptionStatus =~ "Enabled", "Activated via Pay-as-you-go",
+    isnull(softwareAssurance) or isnull(softwareAssuranceCustomer) or softwareAssuranceCustomer == false, "Not activated",
+    "Not activated")
+| where benefitsStatus == "Not activated"
+| extend ACR = round(logicalCoreCount* 1.05,2)
+| extend cloudprovider = properties.detectedProperties.cloudprovider
+| project name, status, logicalCoreCount, benefitsStatus, resourceGroup, subscriptionId, operatingSystem, id, type, location, kind, tags,ACR
+| order by ['logicalCoreCount'] desc
