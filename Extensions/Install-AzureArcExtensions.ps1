@@ -17,7 +17,7 @@
 .PARAMETER WhatIf
     No installation is performed. A preview list of the posible affected machines is shown
 .PARAMETER SettingsFile
-    Specifies a JSON file with the settings for the extension.
+    Specifies a JSON file with the settings for the extension. (-settingsFile AMASettings.json)
     {
     "proxy": {
         "mode": "application",
