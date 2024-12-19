@@ -1,5 +1,5 @@
 
-<#
+#Requires -Modules @(@{"ModuleName"="Az.Accounts"; RequiredVersion="4.0.0",ModuleName="Az.ResourceGraph"; RequiredVersion="1.0.1"})
 .DESCRIPTION
    This script enables Software Assurance benefits for Azure Arc servers (Server Management), as decribed in the following
    document # https://learn.microsoft.com/en-us/azure/azure-arc/servers/windows-server-management-overview.
@@ -92,7 +92,7 @@ if ($PSBoundParameters.ContainsKey('SubscriptionIds')) {
 }
 
 if ($PSBoundParameters.ContainsKey('ResourceGroupNames')) {
-    $KQLquery = $KQLquery + "`n| where resourceGroup in ('" + ($ResourceGroupNames -join "','") + "')"
+    $KQLquery = $KQLquery + "`n| where resourceGroup in~ ('" + ($ResourceGroupNames -join "','").ToLower() + "')"
 }
 
 
