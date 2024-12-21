@@ -1,5 +1,6 @@
 
-#Requires -Modules @(@{"ModuleName"="Az.Accounts"; RequiredVersion="4.0.0",ModuleName="Az.ResourceGraph"; RequiredVersion="1.0.1"})
+#Requires -Modules @{"ModuleName"="Az.Accounts"; RequiredVersion="4.0.0"},@{ModuleName="Az.ResourceGraph"; RequiredVersion="1.0.1"}
+<#
 .DESCRIPTION
    This script enables Software Assurance benefits for Azure Arc servers (Server Management), as decribed in the following
    document # https://learn.microsoft.com/en-us/azure/azure-arc/servers/windows-server-management-overview.
@@ -66,6 +67,7 @@ $KQLquery = @"
 resources
 | where type =~ "microsoft.hybridcompute/machines"
 | extend status = properties.status
+| extend agent = extract(@"(\d+).(\d+)", 0, tostring(properties.agentVersion))
 | where status != "Expired"
 | extend operatingSystem = properties.osSku
 | where properties.osType =~ 'windows' and operatingSystem !contains "2008"
@@ -82,7 +84,7 @@ resources
     (licenseStatus =~ "Licensed" and licenseChannel =~ "PGS:TB") or productSubscriptionStatus =~ "Enabled", "Activated via Pay-as-you-go",
     isnull(softwareAssurance) or isnull(softwareAssuranceCustomer) or softwareAssuranceCustomer == false, "Not activated",
     "Not activated")
-| project name, status,coreCount, logicalCoreCount, BenefitsStatus, resourceGroup, subscriptionId, operatingSystem, id, type, location, kind, tags
+| project name, status,agent,coreCount, logicalCoreCount, BenefitsStatus, resourceGroup, subscriptionId, operatingSystem, id, type, location, kind, tags
 | order by ['logicalCoreCount'] desc 
 | where BenefitsStatus == "$benefitsStatus"
 "@
@@ -117,6 +119,7 @@ $KQLqueryServeractivated = @"
 resources
 | where type =~ "microsoft.hybridcompute/machines"
 | extend status = properties.status
+| extend agent = extract(@"(\d+).(\d+)", 0, tostring(properties.agentVersion))
 | where status != "Expired"
 | extend operatingSystem = properties.osSku
 | where properties.osType =~ 'windows' and operatingSystem !contains "2008"
@@ -145,10 +148,10 @@ resources
 # This section enables Server Managemen) (Software Assurance benefits) for the selected servers
 
 
-Write-Host "$($results | Format-Table Name,OperatingSystem,BenefitsStatus,status,logicalCoreCount,resourcegroup, location, subscriptionid | Out-String)" -ForegroundColor Green
+Write-Host "$($results | Format-Table Name,OperatingSystem,BenefitsStatus,status,agent,logicalCoreCount,resourcegroup, location, subscriptionid | Out-String)" -ForegroundColor Green
 
 # Export the list of servers to a CSV file
-$results | Select-Object Name, BenefitsStatus, status, logicalCoreCount, resourcegroup, location, subscriptionid | Export-Csv -notypeinformation -Path ".\AzureArcServerstoActivateSM-$($timestamp).csv"
+$results | Select-Object Name, BenefitsStatus, status, agent, logicalCoreCount, resourcegroup, location, subscriptionid | Export-Csv -notypeinformation -Path ".\AzureArcServerstoActivateSM-$($timestamp).csv"
 
 if ($results.Count -eq 0) {
     Write-Host "No Azure Arc servers were found to activate for Software Assurance benefits." -ForegroundColor Yellow
@@ -170,7 +173,7 @@ $csvFilePath = ".\AzureArcServerstoActivateSM-Results-$($timestamp).csv"
 # Check if the CSV file exists
 if (-Not (Test-Path -Path $csvFilePath)) {
     # If the file does not exist, create it and add the headers
-    "name,OperatingSystem,Status,BenefitsStatus,ResourceGroup,LogicalCoreCount,SubscriptionId,Location,details" | Out-File -Path $csvFilePath
+    "name,OperatingSystem,Status,agent,BenefitsStatus,ResourceGroup,LogicalCoreCount,SubscriptionId,Location,details" | Out-File -Path $csvFilePath
 }
 
 Write-Host "Enabling Software Assurance benefits for the selected servers..." -ForegroundColor Green
@@ -198,6 +201,7 @@ foreach ($group in $ResultsGroupedbysub) {
         $machinename = $arcobject.name
         $operatingSystem = $arcobject.operatingSystem
         $status = $arcobject.status
+        $agent = $arcobject.agent
         $ResourceGroup = $arcobject.resourceGroup
         $coreCount = $arcobject.coreCount
         $logicalCoreCount = $arcobject.logicalCoreCount
@@ -220,6 +224,7 @@ foreach ($group in $ResultsGroupedbysub) {
                 Name             = $machinename
                 OperatingSystem  = $operatingSystem
                 Status           = $status
+                agent            = $agent
                 BenefitsStatus   = "Activated"
                 ResourceGroup    = $ResourceGroup
                 LogicalCoreCount = $logicalCoreCount
@@ -236,6 +241,7 @@ foreach ($group in $ResultsGroupedbysub) {
                 Name             = $machinename
                 OperatingSystem  = $operatingSystem
                 Status           = $status
+                agent            = $agent
                 BenefitsStatus   = "Not activated"
                 ResourceGroup    = $ResourceGroup
                 LogicalCoreCount = $logicalCoreCount
