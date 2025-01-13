@@ -2,7 +2,7 @@
 # that have the SQL extension installed
 
 #Updated settings object
-$LicenseType = "Paid"
+$LicenseType = "Paid" # Paid,PAYG
 $Settings = @{ SqlManagement = @{ IsEnabled = $true }; LicenseType = $LicenseType }
 #Command stays the same as before, only settings is changed above:
 #New-AzConnectedMachineExtension -Name "WindowsAgent.SqlServer" -ResourceGroupName { your resource group name } -MachineName { your machine name } -Location { azure region } -Publisher "Microsoft.AzureData" -Settings $Settings -ExtensionType "WindowsAgent.SqlServer"
