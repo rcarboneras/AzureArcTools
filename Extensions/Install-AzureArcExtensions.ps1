@@ -251,6 +251,9 @@ else {
             if ($PSBoundParameters.ContainsKey("SettingsFile")) {
                 $Parameters["Setting"] = $Settings
             }
+            if ($PSBoundParameters.ContainsKey("DesiredVersion")) {
+                $Parameters["TypeHandlerVersion"] = $DesiredVersion
+            }
     
             New-AzConnectedMachineExtension @Parameters
         }
