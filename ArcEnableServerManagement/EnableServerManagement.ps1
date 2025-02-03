@@ -1,5 +1,5 @@
 
-#Requires -Modules @{"ModuleName"="Az.Accounts"; RequiredVersion="4.0.0"},@{ModuleName="Az.ResourceGraph"; RequiredVersion="1.0.1"}
+#Requires -Modules @{"ModuleName"="Az.Accounts"; "ModuleVersion"="4.0.0"},@{"ModuleName"="Az.ResourceGraph"; "ModuleVersion"="1.0.1"}
 <#
 .DESCRIPTION
    This script enables Software Assurance benefits for Azure Arc servers (Server Management), as decribed in the following
