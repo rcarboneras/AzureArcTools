@@ -66,7 +66,7 @@ foreach ($ServerName in $Servernames) {
  
 
     # Remove Log Analytics Workspace from MMA
-    $UNCpath = "\\arcdc1\share\GustomSriptRemoveLogAnalitycsWorkspace.ps1"
+    $UNCpath = "\\arcdc1\share\CustomScriptRemoveLogAnalitycsWorkspace.ps1"
     $protectedSettings = @{"commandToExecute" = "powershell -ExecutionPolicy Unrestricted -File $UNCpath" };
 
     try {
