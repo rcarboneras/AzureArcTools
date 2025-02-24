@@ -17,15 +17,22 @@
 .PARAMETER WhatIf
     No installation is performed. A preview list of the posible affected machines is shown
 .PARAMETER SettingsFile
-    Specifies a JSON file with the settings for the extension. (-settingsFile AMASettings.json)
-    {
-    "proxy": {
-        "mode": "application",
-        "address": "http://proxy.contoso.com"
+    Specifies a PSD1, PowerShell Data file with the settings for the extension.
+    The file should have the following format:    
+    @{
+        proxy = @{
+            address = 'http://proxy.contoso.com'
+            mode = 'application'
+           auth = $false
+        }
     }
+
 }
 .PARAMETER SkipTags
     Removes the Tag filter. Every machine that don't have the extension installed will be affected, regardless of its Azure tags
+.EXAMPLE
+    This installs Azure Monitor Windows Agent extension version with a proxy specified in the settings file
+    .\Install-AzureArcExtensions.ps1 -PublisherName Microsoft.Azure.Monitor -Type AzureMonitorWindowsAgent -OSType windows -Location westeurope -DesiredVersion 1.32.0.0 -SettingsFile .\ExtensionSettings.psd1
 .EXAMPLE
    This installs Change Tracking extension version 2.20.0.0 on Windows machines in westeurope location, regardless its tags
    .\Install-AzureArcExtensions.ps1 -PublisherName Microsoft.Azure.ChangeTrackingAndInventory -Type ChangeTracking-Windows -OSType windows -DesiredVersion 2.20.0.0 -Location westeurope -skipTags
@@ -50,8 +57,7 @@ Param (
     $Location = "eastus",
     [switch]$Whatif,
     [switch]$SkipTags,
-    [string]$SettingsFile,
-    [int]$batchSize = 250
+    [string]$SettingsFile
 )
 
 
@@ -224,11 +230,8 @@ else {
             Write-Host "Settings file was passed. Checking if it exists..." -ForegroundColor Green
             if (Test-Path $SettingsFile) {
                 Write-Host "Settings file exists. Reading settings..." -ForegroundColor Green
-                $Settingscontent = Get-Content $SettingsFile | ConvertFrom-Json
-                $Settings = @{}
-                foreach ($property in $Settingscontent.PSObject.Properties) {
-                    $Settings[$property.Name] = $property.Value
-                }
+                $Settings = Import-PowerShellDataFile -Path $SettingsFile
+
                 Write-Host "Settings file was read successfully" -ForegroundColor Green
             }
             else {
@@ -254,7 +257,7 @@ else {
             if ($PSBoundParameters.ContainsKey("DesiredVersion")) {
                 $Parameters["TypeHandlerVersion"] = $DesiredVersion
             }
-    
+            
             New-AzConnectedMachineExtension @Parameters
         }
     } 
