@@ -85,7 +85,7 @@
               ]
             },
             "value": {
-              "durationMs": 604800000
+              "durationMs": 259200000
             }
           },
           {
@@ -237,7 +237,7 @@
             "version": "KqlParameterItem/1.0",
             "name": "ServiceNameFilter",
             "type": 1,
-            "value": "monitoring"
+            "value": "extension"
           },
           {
             "id": "83a207be-172b-403a-88bf-ba035e0b1dc7",
@@ -275,7 +275,7 @@
             "queryType": 0,
             "resourceType": "microsoft.operationalinsights/workspaces",
             "value": [
-              "MonitoringService"
+              "SqlServerExtension"
             ]
           },
           {
@@ -512,7 +512,7 @@
             "multiSelect": true,
             "quote": "'",
             "delimiter": ",",
-            "query": "ConfigurationData\r\n| where ConfigDataType == \"Software\"\r\n| where Computer in~ ({Computer}) or '*' in~ ({Computer})\r\n| extend Publisher = replace_string(Publisher,'\\\\',' ')\r\n| distinct Publisher\r\n| order by Publisher asc",
+            "query": "ConfigurationData\r\n| where ConfigDataType == \"Software\"\r\n| extend Publisher = replace_string(Publisher,'\\\\',' ')\r\n| distinct Publisher\r\n| order by Publisher asc",
             "crossComponentResources": [
               "{Workspace}"
             ],
@@ -528,7 +528,10 @@
             "resourceType": "microsoft.operationalinsights/workspaces",
             "value": [
               "Microsoft",
-              "Microsoft Corporation"
+              "Microsoft Corporation",
+              "Microsoft Corp.",
+              "Microsoft Coporation",
+              "Microsoft Corp"
             ]
           },
           {
@@ -538,7 +541,7 @@
             "label": "Software filter (>999)",
             "type": 1,
             "description": "This parameter is to pre-filter the number of distinct software shown (only 1000 items are allowed)",
-            "value": "monitoring"
+            "value": "connected"
           },
           {
             "id": "028d3fb0-611e-4132-a235-05ccd1736545",
@@ -550,7 +553,7 @@
             "multiSelect": true,
             "quote": "'",
             "delimiter": ",",
-            "query": "ConfigurationData\r\n| where ConfigDataType == \"Software\"\r\n| where replace_string(Publisher,'\\\\',' ') in~ ({Publisher}) or '*' in ({Publisher})\r\n| where SoftwareType == \"Application\" and SoftwareName contains '{Applicationfilter}'\r\n| where Computer in~ ({Computer}) or '*' in~ ({Computer}) \r\n| distinct SoftwareName",
+            "query": "ConfigurationData\r\n| where ConfigDataType == \"Software\"\r\n| where replace_string(Publisher,'\\\\',' ') in~ ({Publisher}) or '*' in ({Publisher})\r\n| where SoftwareType == \"Application\" and SoftwareName contains '{Applicationfilter}'\r\n| distinct SoftwareName",
             "crossComponentResources": [
               "{Workspace}"
             ],
@@ -569,7 +572,7 @@
             "queryType": 0,
             "resourceType": "microsoft.operationalinsights/workspaces",
             "value": [
-              "Microsoft Monitoring Agent"
+              "Azure Connected Machine Agent"
             ]
           },
           {
@@ -594,8 +597,9 @@
               "showDefault": false
             },
             "timeContext": {
-              "durationMs": 86400000
+              "durationMs": 0
             },
+            "timeContextFromParameter": "TimeRange",
             "defaultValue": "value::5",
             "queryType": 0,
             "resourceType": "microsoft.operationalinsights/workspaces",
