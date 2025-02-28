@@ -19,5 +19,6 @@ resources
 | where benefitsStatus == "Not activated"
 | extend ACR = round(logicalCoreCount* 1.05,2)
 | extend cloudprovider = properties.detectedProperties.cloudprovider
-| project name, status, logicalCoreCount, benefitsStatus, resourceGroup, subscriptionId, operatingSystem, id, type, location, kind, tags,ACR
+| extend OSlicenseStatus = properties.licenseProfile.licenseStatus
+| project name, status, logicalCoreCount, benefitsStatus, OSlicenseStatus, cloudprovider, resourceGroup, subscriptionId, operatingSystem, id, location, kind, ACR
 | order by ['logicalCoreCount'] desc
