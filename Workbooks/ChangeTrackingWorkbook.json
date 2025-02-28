@@ -247,34 +247,6 @@
               "value": ""
             },
             {
-              "id": "769f0149-8413-450a-a96d-8912f2d1b47d",
-              "version": "KqlParameterItem/1.0",
-              "name": "Computer",
-              "type": 2,
-              "isRequired": true,
-              "multiSelect": true,
-              "quote": "'",
-              "delimiter": ",",
-              "query": "ConfigurationData\r\n| where ConfigDataType == \"WindowsServices\"\r\n| where SvcName like \"{ServiceNameFilter}\"\r\n| where Computer like \"{ComputerFilter}\"\r\n| distinct Computer",
-              "crossComponentResources": [
-                "{Workspace}"
-              ],
-              "typeSettings": {
-                "additionalResourceOptions": [
-                  "value::1",
-                  "value::5",
-                  "value::all"
-                ],
-                "showDefault": false
-              },
-              "defaultValue": "value::5",
-              "queryType": 0,
-              "resourceType": "microsoft.operationalinsights/workspaces",
-              "value": [
-                "value::all"
-              ]
-            },
-            {
               "id": "4a64dd88-3926-4075-a2bf-04aa91170d0a",
               "version": "KqlParameterItem/1.0",
               "name": "ServiceName",
@@ -283,7 +255,7 @@
               "multiSelect": true,
               "quote": "'",
               "delimiter": ",",
-              "query": "ConfigurationData\r\n| where ConfigDataType == \"WindowsServices\"\r\n| where SvcName like \"{ServiceNameFilter}\"\r\n| where Computer in~ ({Computer}) or '*' in~ ({Computer}) \r\n| distinct SvcName",
+              "query": "ConfigurationData\r\n| where ConfigDataType == \"WindowsServices\"\r\n| where SvcName like \"{ServiceNameFilter}\"\r\n| distinct SvcName",
               "crossComponentResources": [
                 "{Workspace}"
               ],
@@ -304,6 +276,34 @@
               "resourceType": "microsoft.operationalinsights/workspaces",
               "value": [
                 "SqlServerExtension"
+              ]
+            },
+            {
+              "id": "769f0149-8413-450a-a96d-8912f2d1b47d",
+              "version": "KqlParameterItem/1.0",
+              "name": "Computer",
+              "type": 2,
+              "isRequired": true,
+              "multiSelect": true,
+              "quote": "'",
+              "delimiter": ",",
+              "query": "ConfigurationData\r\n| where ConfigDataType == \"WindowsServices\"\r\n| where SvcName in~ ({ServiceName}) or '*' in~ ({ServiceName}) \r\n| where Computer like \"{ComputerFilter}\"\r\n| distinct Computer",
+              "crossComponentResources": [
+                "{Workspace}"
+              ],
+              "typeSettings": {
+                "additionalResourceOptions": [
+                  "value::1",
+                  "value::5",
+                  "value::all"
+                ],
+                "showDefault": false
+              },
+              "defaultValue": "value::5",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "value": [
+                "value::all"
               ]
             }
           ],
