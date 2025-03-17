@@ -219,7 +219,7 @@ foreach ($group in $ResultsGroupedbysub) {
         $json = $data | ConvertTo-Json
         #Launch the activation
         try {
-            $response = Invoke-RestMethod -Method PUT -Uri $uri.AbsoluteUri -ContentType $contentType -Headers $header -Body $json
+            $response = Invoke-RestMethod -Method PATCH -Uri $uri.AbsoluteUri -ContentType $contentType -Headers $header -Body $json
             $serverObject = [PSCustomObject]@{
                 Name             = $machinename
                 OperatingSystem  = $operatingSystem
