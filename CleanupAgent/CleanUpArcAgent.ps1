@@ -1,6 +1,6 @@
 
 # This script is used to clean up the Azure Arc agent and extensions from a Windows machine.
-# ...existing code...
+
 
 function Write-Log {
     [CmdletBinding()]
