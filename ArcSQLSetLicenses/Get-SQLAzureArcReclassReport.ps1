@@ -38,7 +38,8 @@ resources
 (resources
 | where type == 'microsoft.hybridcompute/machines/extensions' 
 | where properties.type == "WindowsAgent.SqlServer"
-| project id=tolower(id),AzureArcServerid = tolower(tostring(split(id,'/extensions/',0)[0])), ExVersion = properties.typeHandlerVersion, provisioningState = tostring(properties.provisioningState)
+| parse properties with * 'uploadStatus : ' DPSStatus ';' *
+| project id=tolower(id),AzureArcServerid = tolower(tostring(split(id,'/extensions/',0)[0])), ExVersion = properties.typeHandlerVersion, provisioningState = tostring(properties.provisioningState), DPSStatus
 | order by provisioningState) on `$left.['id'] == `$right.AzureArcServerid
 | join kind=inner (
 resources
@@ -52,7 +53,7 @@ resources
 | extend licenseType = tostring(properties.licenseType)
 | extend vcores = toint(properties.vCore)) on AzureArcServerid
 | where isnotempty(['id'])
-| project createdAt,subscriptionId,resourceGroup,AzureArcServerName,Status,SQLInstanceName,version,edition,vcores,licenseType,ExVersion,provisioningState
+| project createdAt,subscriptionId,resourceGroup,AzureArcServerName,Status,SQLInstanceName,version,edition,vcores,licenseType,DPSStatus,ExVersion,provisioningState
 "@
 
 #KQL Global Query results
@@ -72,7 +73,7 @@ $results = foreach ($group in $ResultsGlobalGrouped) {
     foreach ($arcobject in $group.Group ) {
         $machinename = $arcobject.AzureArcServerName
         $ResourceGroupName = $arcobject.resourceGroup
-        $licensetype = (Get-AzConnectedMachineExtension -MachineName $machinename -ResourceGroupName $ResourceGroupName -Name WindowsAgent.SqlServer -ErrorAction SilentlyContinue | Select-Object -expandproperty setting)["LicenseType"]
+        $licensetype = Get-AzConnectedMachineExtension -MachineName $machinename -ResourceGroupName $ResourceGroupName -Name WindowsAgent.SqlServer -ErrorAction SilentlyContinue | Select-Object -ExpandProperty setting | ConvertFrom-Json | Select-Object -ExpandProperty LicenseType -ErrorAction SilentlyContinue
         $properties = [ordered]@{
             createdAt          = $arcobject.createdAt          
             subscriptionId     = $arcobject.subscriptionId     
@@ -83,8 +84,9 @@ $results = foreach ($group in $ResultsGlobalGrouped) {
             version            = $arcobject.version            
             edition            = $arcobject.edition            
             vcores             = $arcobject.vcores             
-            licenseTypeinGraph = $arcobject.licenseType   
-            licenseTypeInExt   = $licensetype                   
+            #licenseTypeinGraph = $arcobject.licenseType   
+            licenseType        = $licensetype
+            DPSStatus          = $arcobject.DPSStatus                  
             ExVersion          = $arcobject.ExVersion          
             provisioningState  = $arcobject.provisioningState  
                     
