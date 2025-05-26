@@ -55,6 +55,7 @@ Param (
     $DesiredVersion,
     [Parameter(Mandatory)]
     $Location = "eastus",
+    $batchSize = 100,
     [switch]$Whatif,
     [switch]$SkipTags,
     [string]$SettingsFile
