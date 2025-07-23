@@ -39,6 +39,15 @@
   This sintaxis is for customers that already purchashed the ESU licenses for Year 1 and have the Year1InvoiceId (10 digits) available.
 
    .\ESUsSetLicenses.ps1 -ProvisionLicenses -SourceLicensesFile 'ModifiedESULicensesSourcefile.csv' -Year1InvoiceId 1234567890
+.EXAMPLE
+  Create the ESU licenses for the Azure Arc servers running Windows Server 2012 or 2012 R2, using a modified ModifiedESULicensesSourcefile.csv file
+  A 'ESUAssigmentInfo.csv' file will be created with the information of the licenses created and the Azure Arc servers linked to them.
+
+  This sintaxis is to create the ESU licenses in a different subscription than the one where the Azure Arc servers are registered.
+
+   .\ESUsSetLicenses.ps1 -ProvisionLicenses -SourceLicensesFile 'ModifiedESULicensesSourcefile.csv' -LicenseSubscriptionId '00000000-0000-0000-0000-000000000000'
+
+
 #>
 
 
@@ -62,7 +71,10 @@ Param (
   [string]$SourceLicenseAssigmentInfoFile,
   [Parameter(Mandatory = $false,
     ParameterSetName = 'ProvisionLicenses')]
-  [string]$Year1InvoiceId
+  [string]$Year1InvoiceId,
+  [Parameter(Mandatory = $false,
+    ParameterSetName = 'ProvisionLicenses')]
+  [string]$LicenseSubscriptionId
 
 )
 
@@ -163,8 +175,15 @@ if ($ProvisionLicenses) {
   }
 
 
-  # Group licenses by subscription
-  $ESUlicensestoCreate | ForEach-Object { $_ | Add-Member -MemberType NoteProperty -Name SubscriptionId -Value ($_.id -split "/")[2] }
+  # Add SubscriptionId to the license objects
+
+  if ($PSBoundParameters.ContainsKey('LicenseSubscriptionId')) {
+    Write-Host "Using $LicenseSubscriptionId as the subscription for ESU licenses" -ForegroundColor Yellow
+    $ESUlicensestoCreate | ForEach-Object { $_ | Add-Member -MemberType NoteProperty -Name SubscriptionId -Value $LicenseSubscriptionId } 
+  }
+  else {
+    $ESUlicensestoCreate | ForEach-Object { $_ | Add-Member -MemberType NoteProperty -Name SubscriptionId -Value ($_.id -split "/")[2] }
+  }
 
 
   # Datacenter vs Standard Editions
