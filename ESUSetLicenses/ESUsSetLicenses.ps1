@@ -1,6 +1,4 @@
-
-#requires -Version 7.3.8 -module Az.ResourceGraph -module Az.Accounts
-
+#requires -Version 7.3 -module Az.ResourceGraph -module Az.Accounts
 <#
 .DESCRIPTION
    This script will create ESU licenses for Azure Arc enabled servers running Windows Server 2012 or 2012 R2 and link them to the servers automatically.
@@ -74,7 +72,13 @@ Param (
   [string]$Year1InvoiceId,
   [Parameter(Mandatory = $false,
     ParameterSetName = 'ProvisionLicenses')]
-  [string]$LicenseSubscriptionId
+  [string]$Year2InvoiceId,
+  [Parameter(Mandatory = $false,
+    ParameterSetName = 'ProvisionLicenses')]
+  [string]$LicenseSubscriptionId,
+  [Parameter(Mandatory = $false,
+    ParameterSetName = 'ProvisionLicenses')]
+  [string]$LicenseResourceGroup
 
 )
 
@@ -211,7 +215,35 @@ if ($ProvisionLicenses) {
     $SubscriptionId = $license.SubscriptionId
     $ResourceGroup = ($license.id -split "/")[4]
 
-    if ($PSBoundParameters.ContainsKey('Year1InvoiceId')) {
+    if ($PSBoundParameters.ContainsKey('Year1InvoiceId') -and $PSBoundParameters.ContainsKey('Year2InvoiceId')) {
+      # Case 1: Both Year 1 and Year 2 invoices provided
+      $payload = @"
+      {
+          "location": "$location", 
+          "properties": {
+              "licenseDetails": {
+                  "state": "$state",
+                  "target": "$target",
+                  "Edition": "$Edition", 
+                  "Type": "$Type",
+                  "Processors": $Processors,
+                  "volumeLicenseDetails": [
+                    {
+                      "programYear": "Year 2",
+                      "invoiceId": "$Year2InvoiceId"
+                    },
+                    {
+                      "programYear": "Year 1",
+                      "invoiceId": "$Year1InvoiceId"
+                    }
+                  ]
+              } 
+          } 
+      }
+"@
+    }
+    elseif ($PSBoundParameters.ContainsKey('Year1InvoiceId')) {
+      # Case 2: Only Year 1 invoice provided
       $payload = @"
       {
           "location": "$location", 
@@ -234,6 +266,7 @@ if ($ProvisionLicenses) {
 "@
     }
     else {
+      # Case 3: No invoices provided
       $payload = @"
 {
     "location": "$location", 
@@ -253,7 +286,10 @@ if ($ProvisionLicenses) {
 
     #Provision license 
     try {
-     
+      if ($PSBoundParameters.ContainsKey('LicenseResourceGroup')) {
+        Write-Host "Using $LicenseResourceGroup as the resource group for ESU licenses" -ForegroundColor Yellow
+        $ResourceGroup = $LicenseResourceGroup
+      }
       $ESUlicense = Invoke-AzRestMethod -Path "/subscriptions/$SubscriptionId/resourceGroups/$ResourceGroup/Providers/Microsoft.HybridCompute/licenses/$($LicenseName)?api-version=$apiversion" -Method PUT -payload $payload -Verbose -ErrorAction Stop   
       $ESUlicenseid = $ESUlicense.Content | ConvertFrom-Json | Select-Object -ExpandProperty id
       $ESUCreatedobj = [PSCustomObject]@{
