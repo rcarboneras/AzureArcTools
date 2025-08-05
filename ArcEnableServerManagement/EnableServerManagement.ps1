@@ -145,7 +145,7 @@ resources
 "@
 
 #ENABLEMENT
-# This section enables Server Managemen) (Software Assurance benefits) for the selected servers
+# This section enables Server Management) (Software Assurance benefits) for the selected servers
 
 
 Write-Host "$($results | Format-Table Name,OperatingSystem,BenefitsStatus,status,agent,logicalCoreCount,resourcegroup, location, subscriptionid | Out-String)" -ForegroundColor Green
@@ -233,6 +233,7 @@ foreach ($group in $ResultsGroupedbysub) {
                 details          = "OK"
             }
             $serverObject | Export-Csv -Path $csvFilePath -NoTypeInformation -Append
+            Write-Host "$($uri.AbsoluteUri)" -ForegroundColor
             Write-Host "Software Assurance benefits enabled for the server '$($machinename)' in the subscription '$($Subscriptionid)'" -ForegroundColor Green
         }
         catch {
