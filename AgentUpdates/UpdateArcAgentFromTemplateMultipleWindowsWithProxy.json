@@ -8,7 +8,7 @@
                 "SERVER1"
             ],
             "metadata": {
-                "description": "Array of servers, in this form: [\"SERVER1\",\"SERVER2\"]"
+                "description": "Array of servers, example format: [\"SERVER1\",\"SERVER2\"]"
             }
         },
         "Deploymentid": {
@@ -23,6 +23,12 @@
             "defaultValue": "[concat('Time',utcNow())]",
             "metadata": {
                 "description": "Time Stamp for the deployment"
+            }
+        },
+        "SASUrl": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Enter your Agent msi SAS URL here"
             }
         }
     },
@@ -43,8 +49,10 @@
                     },
                     "ForceUpdateTag": {
                         "value": "[parameters('ForceUpdateTag')]"
+                    },
+                    "SASUrl": {
+                        "value": "[parameters('SASUrl')]"
                     }
-
                 },
                 "template": {
                     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
@@ -55,12 +63,14 @@
                         },
                         "ForceUpdateTag": {
                             "type": "string"
+                        },
+                        "SASUrl": {
+                            "type": "string"
                         }
                     },
                     "variables": {
                         "count": "[length(parameters('MachineList'))]",
-                        "command": "[concat('powershell -ExecutionPolicy Unrestricted -Command $ErrorActionPreference = 1; md c:\\Support -force; [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri ''','--FULLSASURL--',''' -Proxy $($ENV:HTTPS_PROXY) -OutFile c:\\Support\\AzureConnectedMachineAgent.msi; msiexec /i c:\\Support\\AzureConnectedMachineAgent.msi /qn REBOOT=ReallySuppress /l*v C:\\Support\\azcmagentupgradesetup.log')]",
-                        "SASUrl": "<Enter SAS url>"
+                        "command": "[concat('powershell -ExecutionPolicy Unrestricted -Command $ErrorActionPreference = 1; md c:\\Support -force; [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri ''','--FULLSASURL--',''' -Proxy $($ENV:HTTPS_PROXY) -OutFile c:\\Support\\AzureConnectedMachineAgent.msi; msiexec /i c:\\Support\\AzureConnectedMachineAgent.msi /qn REBOOT=ReallySuppress /l*v C:\\Support\\azcmagentupgradesetup.log')]"
                     },
                     "resources": [
                         {
@@ -80,7 +90,7 @@
                                 "autoUpgradeMinorVersion": true,
                                 "enableAutomaticUpgrade": true,
                                 "protectedSettings": {
-                                    "commandToExecute": "[replace(replace(variables('command'),'--FULLSASURL--',variables('SASUrl')),'&','\"&\"')]"
+                                    "commandToExecute": "[replace(replace(variables('command'),'--FULLSASURL--',parameters('SASUrl')),'&','\"&\"')]"
                                 }
                             }
                         }

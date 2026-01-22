@@ -8,7 +8,7 @@
                 "SERVER1"
             ],
             "metadata": {
-                "description": "Array of servers, in this form: [\"SERVER1\",\"SERVER2\"]"
+                "description": "Array of servers, example format: [\"SERVER1\",\"SERVER2\"]"
             }
         },
         "Deploymentid": {
@@ -23,6 +23,12 @@
             "defaultValue": "[concat('Time',utcNow())]",
             "metadata": {
                 "description": "Time Stamp for the deployment"
+            }
+        },
+        "msiUri": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Enter your Agent msi SAS URL here"
             }
         }
     },
@@ -43,6 +49,9 @@
                     },
                     "ForceUpdateTag": {
                         "value": "[parameters('ForceUpdateTag')]"
+                    },
+                    "msiUri": {
+                        "value": "[parameters('msiUri')]"
                     }
                 },
                 "template": {
@@ -54,11 +63,13 @@
                         },
                         "ForceUpdateTag": {
                             "type": "string"
+                        },
+                        "msiUri": {
+                            "type": "string"
                         }
                     },
                     "variables": {
-                        "count": "[length(parameters('machineList'))]",
-                        "msiUri": "<User your SAS URL here>"
+                        "count": "[length(parameters('machineList'))]"
                     },
                     "resources": [
                         {
@@ -82,7 +93,7 @@
                                 },
                                 "protectedSettings": {
                                     "fileUris": [
-                                        "[variables('msiUri')]"
+                                        "[parameters('msiUri')]"
                                     ]
                                 }
                             }
