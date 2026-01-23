@@ -1,3 +1,5 @@
+#Requires -Modules Az.ConnectedMachine, Az.ResourceGraph
+
 #This script will set the license type to the specified one, for all SQL servers Enterprise and Standard Edition
 # that have the SQL extension installed
 #Updated settings object
