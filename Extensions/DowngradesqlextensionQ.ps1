@@ -25,7 +25,9 @@ if (-not $sqlArcExtensions -or $sqlArcExtensions.Count -eq 0) {
 	return
 }
 
-Write-Host "Found $($sqlArcExtensions.Count) Arc machine(s) with '$extensionName'. Starting update..."
+Write-Host "Found $($sqlArcExtensions.Count) Arc machine(s) with '$extensionName'. Evaluating candidates..."
+
+$extensionsToUpdate = @()
 
 foreach ($extensionResource in $sqlArcExtensions) {
 	$nameParts = $extensionResource.Name.Split('/')
@@ -38,6 +40,7 @@ foreach ($extensionResource in $sqlArcExtensions) {
 	$resourceGroupName = $extensionResource.ResourceGroupName
 	$location = $extensionResource.Location
 	$currentVersion = $null
+	$currentExtension = $null
 
 	if ($extensionResource.Properties -and
 		$extensionResource.Properties.PSObject.Properties.Name -contains 'typeHandlerVersion') {
@@ -60,6 +63,14 @@ foreach ($extensionResource in $sqlArcExtensions) {
 		continue
 	}
 
+	try {
+		$currentExtension = Get-AzConnectedMachineExtension -ResourceGroupName $resourceGroupName -MachineName $machineName -Name $extensionName -ErrorAction Stop
+	}
+	catch {
+		Write-Warning "Skipping '$machineName' in '$resourceGroupName' because extension properties could not be resolved. Error: $($_.Exception.Message)"
+		continue
+	}
+
 	if ([string]::IsNullOrWhiteSpace($location)) {
 		try {
 			$machine = Get-AzConnectedMachine -ResourceGroupName $resourceGroupName -Name $machineName -ErrorAction Stop
@@ -71,26 +82,54 @@ foreach ($extensionResource in $sqlArcExtensions) {
 		}
 	}
 
+	$extensionsToUpdate += [PSCustomObject]@{
+		MachineName = $machineName
+		ResourceGroupName = $resourceGroupName
+		Location = $location
+		CurrentVersion = $currentVersion
+		Extension = $currentExtension
+	}
+}
+
+if ($extensionsToUpdate.Count -eq 0) {
+	Write-Host "No extensions match source version '$SourceTypeHandlerVersion'. Nothing to update."
+	return
+}
+
+Write-Host "The following $($extensionsToUpdate.Count) extension(s) will be updated:" -ForegroundColor Yellow
+foreach ($candidate in $extensionsToUpdate) {
+	Write-Host "--- Machine: $($candidate.MachineName) | RG: $($candidate.ResourceGroupName) ---" -ForegroundColor Yellow
+	$details = $candidate.Extension | Format-List * | Out-String
+	Write-Host $details -ForegroundColor Yellow
+}
+
+$confirmation = Read-Host "Press ENTER to confirm update, or type anything to cancel"
+if (-not [string]::IsNullOrEmpty($confirmation)) {
+	Write-Host 'Operation cancelled by user.'
+	return
+}
+
+foreach ($candidate in $extensionsToUpdate) {
 	try {
-		Write-Host "Updating '$machineName' from version '$currentVersion' to '$TypeHandlerVersion' (RG: '$resourceGroupName', Location: '$location')..."
+		Write-Host "Updating '$($candidate.MachineName)' from version '$($candidate.CurrentVersion)' to '$TypeHandlerVersion' (RG: '$($candidate.ResourceGroupName)', Location: '$($candidate.Location)')..."
 
 		Set-AzConnectedMachineExtension `
-			-MachineName $machineName `
-			-ResourceGroupName $resourceGroupName `
+			-MachineName $candidate.MachineName `
+			-ResourceGroupName $candidate.ResourceGroupName `
 			-Name $extensionName `
 			-Publisher $publisher `
 			-ExtensionType $extensionType `
-			-Location $location `
+			-Location $candidate.Location `
 			-TypeHandlerVersion $TypeHandlerVersion `
 			-NoWait `
             -EnableAutomaticUpgrade:$true `
             -Settings $settings `
 			-ErrorAction Stop | Out-Null
 
-		Write-Host "Queued update for '$machineName'."
+		Write-Host "Queued update for '$($candidate.MachineName)'."
 	}
 	catch {
-		Write-Error "Failed to update '$machineName' in '$resourceGroupName'. Error: $($_.Exception.Message)"
+		Write-Error "Failed to update '$($candidate.MachineName)' in '$($candidate.ResourceGroupName)'. Error: $($_.Exception.Message)"
 	}
 }
 
