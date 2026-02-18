@@ -4,6 +4,7 @@
 
 # Use Select-AzSubscription to set the context to the desired subscription before running this script.
 $TypeHandlerVersion = '1.1.3238.350'
+$SourceTypeHandlerVersion = '1.1.3307.355'
 $extensionName = 'WindowsAgent.SqlServer'
 $publisher = 'Microsoft.AzureData'
 $extensionType = 'WindowsAgent.SqlServer'
@@ -54,8 +55,8 @@ foreach ($extensionResource in $sqlArcExtensions) {
 		}
 	}
 
-	if ($currentVersion -eq $TypeHandlerVersion) {
-		Write-Host "Skipping '$machineName' (current version '$currentVersion' already matches desired version)."
+	if ($currentVersion -ne $SourceTypeHandlerVersion) {
+		Write-Host "Skipping '$machineName' (current version '$currentVersion' is not '$SourceTypeHandlerVersion')."
 		continue
 	}
 
