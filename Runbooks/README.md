@@ -22,19 +22,19 @@ This PowerShell runbook automatically removes expired Azure Arc-enabled servers 
 
 Grant the necesary permisions to the Automation Account's managed identity at the subscription or resource group level.
 
-![Assign Role to Managed Identity](remove0.png)
+![Assign Role to Managed Identity](remove01.png)
 
 [Learn more about Azure Arc roles](https://learn.microsoft.com/en-us/azure/azure-arc/servers/security-permissions)
 
 ### 3. Create a Runtime Environment
 
 1. In the Automation Account, switch to the Runtime Environment experience
-2. Go to Runtime Environments > Create
-3. Select PowerShell 7.6 as the runtime version
+2. Go to **Runtime Environments** > **Create** 
+3. Select **PowerShell 7.6** as the runtime version
 
-![Runtime environment experience](remove1.png)
+![Runtime environment experience](remove02.png)
 
-![Create Runtime Environment](remove2.png)
+![Create Runtime Environment](remove03.png)
 
 
 ### 4. Import Required Modules
@@ -45,8 +45,10 @@ Add these modules to the runtime environment:
 3. `Az.Resources`
 4. `Az.ResourceGraph`
 
-![Create Runtime Environment](remove3.png)
-![Runtime Environment Created](remove4.png)
+
+![Runtime Environment Created](remove04.png)
+
+![Create Runbook](remove05.png)
 
 
 [Learn more about modules](https://learn.microsoft.com/en-us/azure/automation/shared-resources/modules)
@@ -58,11 +60,9 @@ Add these modules to the runtime environment:
 3. Browse and select the script `RemoveExpiredAzureArcServers.ps1`
 4. Save and publish
 
-![Create Runbook](remove5.png)
+![Create Runbook](remove06.png)
 
-![Create Runbook](remove7.png)
-![Edit and Save Runbook](remove8.png)
-![Test Runbook](remove9.png)
+
 
 ### 6. Test and Schedule
 
