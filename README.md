@@ -100,6 +100,14 @@ This repository gathers a set of tools to work with your Azure Arc Environment
 
   `ServerList.txt` - Text file template containing the list of servers for migration operations
 
+- **[Runbooks](/Runbooks/)**
+  
+  Azure Automation runbooks for automated management and maintenance of Azure Arc-enabled servers.
+
+  `RemoveExpiredAzureArcServers.ps1` - PowerShell runbook to automatically identify and remove expired Azure Arc-enabled servers tagged for decommissioning using managed identity authentication
+
+  `README.md` - Complete setup guide for creating automation accounts, configuring runtime environments, and deploying the runbook
+
 - **[Workbooks](/Workbooks/)**
   
   Azure Monitor workbook templates for visualizing and monitoring Azure Arc resources and their configurations.
