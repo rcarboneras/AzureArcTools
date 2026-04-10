@@ -34,14 +34,14 @@ $TagName = "Decommissioned"
 $TagValue = "True"
 $SubscriptionName = "MCAPS-Hybrid-REQ-46709-2022-racarb"
 
-Write-Host "This workbook is running in worker: $($Env:COMPUTERNAME)"
+Write-Output "This workbook is running in worker: $($Env:COMPUTERNAME)"
 
 #Connect to Azure using a managed identity ()
 try { Add-AzAccount -Identity }
 catch { Write-Output "There was an error trying to connect to Azure"; Write-Warning "$_" }
 
 # Select Azure Subscription
-Select-AzSubscription $SubscriptionName
+Select-AzSubscription $SubscriptionName -verbose
 # Determine wich Azure Arc machines are in a expired status
 Write-Output "Determining Azure Arc machines that are in an expired status..."
 
