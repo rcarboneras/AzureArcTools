@@ -67,6 +67,7 @@ Param (
     [bool]$LinuxPatchExtension           = $false,
     [bool]$MDE_Linux                     = $false,
     [bool]$MDE_Windows                   = $false,
+    [bool]$MicrosoftMonitoringAgent      = $false,
     [bool]$SQLAssessmentPlus             = $false,
     [bool]$WindowsAgent_SqlServer        = $false,
     [bool]$WindowsOsUpdateExtension      = $false,
@@ -164,6 +165,7 @@ $ExtensionMap = @{
     'LinuxPatchExtension'           = 'LinuxPatchExtension'
     'MDE_Linux'                     = 'MDE.Linux'
     'MDE_Windows'                   = 'MDE.Windows'
+    'MicrosoftMonitoringAgent'      = 'MicrosoftMonitoringAgent'
     'SQLAssessmentPlus'             = 'SQLAssessmentPlus'
     'WindowsAgent_SqlServer'        = 'WindowsAgent.SqlServer'
     'WindowsOsUpdateExtension'      = 'WindowsOsUpdateExtension'
