@@ -8,17 +8,18 @@
 Function QueryGraphPaged {
     param (
         $PageSize,
-        $query
+        $query,
+        $Subscriptions
     )
 
     $GlobalResults = @()
 
-    $Results = Search-AzGraph -Query $query -First $PageSize
+    $Results = Search-AzGraph -Query $query -First $PageSize -Subscription $Subscriptions
     $GlobalResults += $Results
     $Skip = $PageSize
     
     do {
-        $Results = Search-AzGraph -Query $query -First $PageSize -Skip $Skip
+        $Results = Search-AzGraph -Query $query -First $PageSize -Skip $Skip -Subscription $Subscriptions
         $Skip += $PageSize
         $GlobalResults += $Results
     } while ($Results.Count -eq $PageSize)
@@ -32,7 +33,6 @@ Function QueryGraphPaged {
 Import-Module Az.Accounts -Force
 $TagName = "Decommissioned"
 $TagValue = "True"
-$SubscriptionName = "MCAPS-Hybrid-REQ-46709-2022-racarb"
 
 Write-Output "This workbook is running in worker: $($Env:COMPUTERNAME)"
 
@@ -40,8 +40,17 @@ Write-Output "This workbook is running in worker: $($Env:COMPUTERNAME)"
 try { Add-AzAccount -Identity }
 catch { Write-Output "There was an error trying to connect to Azure"; Write-Warning "$_" }
 
-# Select Azure Subscription
-Select-AzSubscription $SubscriptionName -verbose
+# Determine subscriptions to process
+$Subscriptions = Get-AzSubscription | Where-Object { $_.State -eq "Enabled" }
+
+if (-not $Subscriptions -or $Subscriptions.Count -eq 0) {
+    Write-Output "No enabled subscriptions found in current context. Exiting..."
+    exit
+}
+
+$SubscriptionIds = $Subscriptions.Id
+Write-Output "Found $($SubscriptionIds.Count) enabled subscription(s) to evaluate."
+
 # Determine wich Azure Arc machines are in a expired status
 Write-Output "Determining Azure Arc machines that are in an expired status..."
 
@@ -57,7 +66,7 @@ resources
 "@
 
 
-$ArcmachinesExpired = QueryGraphPaged -PageSize 100 -query $Graphquery
+$ArcmachinesExpired = QueryGraphPaged -PageSize 100 -query $Graphquery -Subscriptions $SubscriptionIds
 
 if ($ArcmachinesExpired.count -gt 0)
 {
@@ -72,19 +81,40 @@ else {
 Write-Output "Removing decommissioned machines.."
 
 $DeletedServers = @()
+$FailedServers = @()
 
-foreach ($Arcmachine in $ArcmachinesExpired)
+$ArcMachinesBySubscription = $ArcmachinesExpired | Group-Object -Property subscriptionId
+
+foreach ($subscriptionGroup in $ArcMachinesBySubscription)
 {
-    
-    Write-Output "`nRemoving Azure Arc Server $($Arcmachine.name).."
-    Write-Output "$($Arcmachine.id)"
+    $CurrentSubscriptionId = $subscriptionGroup.Name
+    Write-Output "`nSelecting subscription $CurrentSubscriptionId"
+
     try {
-        Remove-AzConnectedMachine -Name $Arcmachine.name -ResourceGroupName $Arcmachine.resourceGroup -Verbose -ErrorAction Stop
-        $DeletedServers += $Arcmachine
+        Select-AzSubscription -SubscriptionId $CurrentSubscriptionId -Verbose -ErrorAction Stop
     }
     catch {
-        Write-Output "Could not remove server $($Arcmachine.Name)"
+        Write-Output "Could not select subscription $CurrentSubscriptionId. Skipping machines in this subscription."
         Write-Output "$($_.Exception.Message)"
+        foreach ($failedMachine in $subscriptionGroup.Group) {
+            $FailedServers += $failedMachine
+        }
+        continue
+    }
+
+    foreach ($Arcmachine in $subscriptionGroup.Group)
+    {
+        Write-Output "`nRemoving Azure Arc Server $($Arcmachine.name).."
+        Write-Output "$($Arcmachine.id)"
+        try {
+            Remove-AzConnectedMachine -Name $Arcmachine.name -ResourceGroupName $Arcmachine.resourceGroup -Verbose -ErrorAction Stop
+            $DeletedServers += $Arcmachine
+        }
+        catch {
+            Write-Output "Could not remove server $($Arcmachine.Name)"
+            Write-Output "$($_.Exception.Message)"
+            $FailedServers += $Arcmachine
+        }
     }
 }
 
@@ -104,4 +134,18 @@ if ($DeletedServers.Count -gt 0) {
 }
 else {
     Write-Output "`nNo servers were successfully deleted."
+}
+
+if ($FailedServers.Count -gt 0) {
+    Write-Output "`n=========================================="
+    Write-Output "FAILURE SUMMARY REPORT"
+    Write-Output "=========================================="
+    Write-Output "Total servers not deleted: $($FailedServers.Count)"
+    Write-Output "`nFailed Servers:"
+
+    foreach ($server in $FailedServers) {
+        Write-Output "  - $($server.name) | RG: $($server.resourceGroup) | Subscription: $($server.subscriptionId) | Status: $($server.Status) | ID: $($server.id)"
+    }
+
+    Write-Output "=========================================="
 }
