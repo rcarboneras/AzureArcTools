@@ -8,18 +8,17 @@
 Function QueryGraphPaged {
     param (
         $PageSize,
-        $query,
-        $Subscriptions
+        $query
     )
 
     $GlobalResults = @()
 
-    $Results = Search-AzGraph -Query $query -First $PageSize -Subscription $Subscriptions
+    $Results = Search-AzGraph -Query $query -First $PageSize
     $GlobalResults += $Results
     $Skip = $PageSize
     
     do {
-        $Results = Search-AzGraph -Query $query -First $PageSize -Skip $Skip -Subscription $Subscriptions
+        $Results = Search-AzGraph -Query $query -First $PageSize -Skip $Skip
         $Skip += $PageSize
         $GlobalResults += $Results
     } while ($Results.Count -eq $PageSize)
@@ -40,17 +39,6 @@ Write-Output "This workbook is running in worker: $($Env:COMPUTERNAME)"
 try { Add-AzAccount -Identity }
 catch { Write-Output "There was an error trying to connect to Azure"; Write-Warning "$_" }
 
-# Determine subscriptions to process
-$Subscriptions = Get-AzSubscription | Where-Object { $_.State -eq "Enabled" }
-
-if (-not $Subscriptions -or $Subscriptions.Count -eq 0) {
-    Write-Output "No enabled subscriptions found in current context. Exiting..."
-    exit
-}
-
-$SubscriptionIds = $Subscriptions.Id
-Write-Output "Found $($SubscriptionIds.Count) enabled subscription(s) to evaluate."
-
 # Determine wich Azure Arc machines are in a expired status
 Write-Output "Determining Azure Arc machines that are in an expired status..."
 
@@ -66,7 +54,7 @@ resources
 "@
 
 
-$ArcmachinesExpired = QueryGraphPaged -PageSize 100 -query $Graphquery -Subscriptions $SubscriptionIds
+$ArcmachinesExpired = QueryGraphPaged -PageSize 100 -query $Graphquery
 
 if ($ArcmachinesExpired.count -gt 0)
 {
