@@ -20,7 +20,7 @@
 # 1) Author the DSC configuration
 # -----------------------------------------------------------------------------
 
-$ConfigurationName = 'RegistryExample7'
+$ConfigurationName = 'RegistryExample'
 
 Configuration $ConfigurationName
 {
@@ -28,7 +28,7 @@ Configuration $ConfigurationName
 
     Registry RegistryExample {
         Ensure    = 'Present' # Use 'Absent' to remove the registry value
-        Key       = 'HKEY_LOCAL_MACHINE\SOFTWARE\ExampleKey7'
+        Key       = 'HKEY_LOCAL_MACHINE\SOFTWARE\ExampleKey'
         ValueName = 'TestValue'
         ValueData = 'TestData'
     }
@@ -150,7 +150,8 @@ New-GuestConfigurationPolicy @PolicyConfig -Verbose -UseSystemAssignedIdentity
 # 5) Publish the Azure Policy definition
 # -----------------------------------------------------------------------------
 
-# The Azure Arc Servers will connect to the storage account using their managed identities, so the new URI will be this one
+# In case you don't want to use a SAS Token to download the package from the storage account, the Azure Arc Servers can authenticate directly with the storage account using their managed identities, given
+# the appropriate role (Storage Blob Data Reader), so the new URI will be this one:
 $NewContentUri = "https://$StorageAccountName.blob.core.windows.net/$ContainerName/$BlobName"
 
 #Replace the URI in the json file before creating the Azure Policy
