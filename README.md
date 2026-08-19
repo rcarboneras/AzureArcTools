@@ -90,6 +90,14 @@ This repository gathers a set of tools to work with your Azure Arc Environment
 
   `ExtensionSettings.psd1` - PowerShell data configuration file containing extension settings and parameters
 
+- **[GuestConfiguration](/GuestConfiguration/)**
+  
+  Tools and scripts for creating, packaging, testing, and publishing Azure Guest Configuration policies for Azure Arc-enabled servers using PowerShell DSC configurations.
+
+  `CustomMachineConfiguration.ps1` - PowerShell script for the complete Guest Configuration workflow, from authoring DSC configurations through publishing Azure Policy definitions
+
+  `README.md` - Comprehensive documentation for the Guest Configuration workflow, usage instructions, and troubleshooting guide
+
 - **[MigrateMMAtoAMA](/MigrateMMAtoAMA/)**
   
   Migration toolkit to transition servers from Microsoft Monitoring Agent (MMA) to Azure Monitor Agent (AMA), including bulk migration scripts and cleanup utilities.
